@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<title>Course Autopilot</title>
+<link rel="stylesheet" href="popup.css"/>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo"><img src="./icons/icon48.png" alt=""></div>
+  <div class="hdr-info">
+    <div class="hdr-title">Course Autopilot</div>
+    <div class="hdr-sub">Videos · Readings · Quizzes — fully automated</div>
+  </div>
+  <div class="hdr-badge">v1.0</div>
+</div>
+
+<div class="m-card">
+  <div class="m-top">
+    <div class="m-brand">
+      <span class="ico">🚀</span>
+      <div>
+        <strong>Full Course Autopilot</strong>
+        <span>Videos + Readings + Quizzes — start to finish</span>
+      </div>
+    </div>
+    <div class="m-pill" id="mPill">IDLE</div>
+  </div>
+  <div class="m-track"><div class="m-bar" id="mBar"></div></div>
+  <div class="m-cur" id="mCur">Not running</div>
+  <div class="m-stats">
+    <div class="m-stat"><div class="n" id="mVid">0</div><div class="l">Videos</div></div>
+    <div class="m-stat"><div class="n" id="mQuiz">0</div><div class="l">Quizzes</div></div>
+    <div class="m-stat"><div class="n" id="mRead">0</div><div class="l">Readings</div></div>
+    <div class="m-stat"><div class="n" id="mSkip">0</div><div class="l">Skipped</div></div>
+  </div>
+  <button class="btn-run" id="btnMarathon">▶  Start Full Autopilot</button>
+</div>
+
+<div class="done-strip" id="doneStrip">
+  <span class="d-ico">🎓</span>
+  <div class="d-text">
+    <strong>Course Complete!</strong>
+    <small>All items processed — autopilot stopped</small>
+  </div>
+</div>
+
+<div class="div"></div>
+<div class="lbl">Quick Actions</div>
+
+<div class="controls">
+  <div class="btn-row">
+    <button class="btn-sm btn-quiz" id="btnSolveQuiz">🧠 Solve Quiz (no submit)</button>
+    <button class="btn-sm btn-next" id="btnNext">▶ Next Lesson</button>
+  </div>
+  <div class="btn-row">
+    <button class="btn-sm btn-skip" id="btnSkipEnd">⏩ Skip to End</button>
+    <button class="btn-sm btn-next" id="btnComplete">✅ Mark Complete</button>
+  </div>
+</div>
+
+<div class="speed">
+  <div class="speed-row">
+    <span>Playback speed</span>
+    <span class="speed-val" id="speedLbl">2×</span>
+  </div>
+  <input type="range" id="speedRange" min="0.5" max="4" step="0.25" value="2"/>
+  <div class="speed-marks"><span>0.5×</span><span>1×</span><span>2×</span><span>3×</span><span>4×</span></div>
+</div>
+<div class="div"></div>
+<div class="lbl" style="margin-top:6px">AI Engine</div>
+<div class="toggles">
+  <div class="tog">
+    <div class="tog-text"><span>Quiz Solver AI</span><small>Which AI to use for answering quizzes</small></div>
+    <select id="aiChoice" style="font-family:inherit;font-size:12px;padding:4px 8px;border-radius:8px;border:1px solid #e5e7eb;background:#f9fafb;color:#111827;cursor:pointer;outline:none;">
+      <option value="claude">Claude</option>
+      <option value="chatgpt">ChatGPT</option>
+    </select>
+  </div>
+</div>
+
+<div class="lbl" style="margin-top:6px">Settings</div>
+<div class="toggles">
+  <div class="tog">
+    <div class="tog-text"><span>Auto-advance</span><small>Next lesson when video ends</small></div>
+    <label class="sw"><input type="checkbox" id="autoAdvance"/><span class="sw-t"></span></label>
+  </div>
+  <div class="tog">
+    <div class="tog-text"><span>Unlock seeking</span><small>Skip freely in any video</small></div>
+    <label class="sw"><input type="checkbox" id="unlockSeeking"/><span class="sw-t"></span></label>
+  </div>
+  <div class="tog">
+    <div class="tog-text"><span>Auto-play</span><small>Resume if Coursera pauses video</small></div>
+    <label class="sw"><input type="checkbox" id="autoPlay"/><span class="sw-t"></span></label>
+  </div>
+  <div class="tog">
+    <div class="tog-text"><span>Skip countdowns</span><small>Auto-dismiss "Next in 5s" overlays</small></div>
+    <label class="sw"><input type="checkbox" id="skipWaiting"/><span class="sw-t"></span></label>
+  </div>
+</div>
+
+<footer>
+  <div class="f-status"><span class="f-dot"></span>live on coursera.org</div>
+  <div class="f-credit">Course Autopilot</div>
+</footer>
+
+<div id="toast"></div>
+<script src="popup.js"></script>
+</body>
+</html>
