@@ -13,6 +13,7 @@
 - [Features](#-features)
 - [Screenshots](#-screenshots)
 - [Installation](#-installation)
+- [User Manual](MANUAL.md)
 - [How It Works](#-how-it-works)
 - [Usage Guide](#-usage-guide)
 - [Architecture](#-architecture)
