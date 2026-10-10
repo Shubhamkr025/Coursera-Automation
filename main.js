@@ -1,6 +1,9 @@
 (function () {
 	"use strict";
 
+	if (window.__cqnLoaded) return;
+	window.__cqnLoaded = true;
+
 	var settings = {
 		autoAdvance: true,
 		unlockSeeking: true,
@@ -17,6 +20,11 @@
 		if (settings.marathonMode && !prev) runner.start();
 		if (!settings.marathonMode && prev) runner.stop();
 	});
+
+	// Request initial settings from injector.js (runs in ISOLATED world)
+	try {
+		window.dispatchEvent(new CustomEvent("CQN_GET_SETTINGS"));
+	} catch (e) {}
 
 	window.addEventListener("CQN_CMD", function (e) {
 		var action = (e.detail || {}).action;
@@ -872,17 +880,9 @@
 		});
 	}
 
+	// ── Native property descriptors (read-only access, no prototype hijacking) ──
 	var nativeRate = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "playbackRate");
 	var nativeTime = Object.getOwnPropertyDescriptor(HTMLMediaElement.prototype, "currentTime");
-
-	Object.defineProperty(HTMLMediaElement.prototype, "playbackRate", {
-		get: function () { return nativeRate.get.call(this); },
-		set: function (v) {
-			var floor = parseFloat(settings.playbackSpeed) || 2;
-			nativeRate.set.call(this, v > 0 && v < floor ? floor : v);
-		},
-		configurable: true,
-	});
 
 	var nativePause = HTMLMediaElement.prototype.pause;
 	HTMLMediaElement.prototype.pause = function () {
@@ -902,12 +902,6 @@
 		if (hooked.has(v)) return;
 		hooked.add(v);
 
-		if (settings.unlockSeeking) {
-			["seeking", "seeked"].forEach(function (evt) {
-				v.addEventListener(evt, function (e) { e.stopImmediatePropagation(); }, { capture: true });
-			});
-		}
-
 		v.addEventListener("pause", function () {
 			if (v.__userPaused || v.__cqnLock) return;
 			if (!settings.autoPlay && !settings.marathonMode) return;
@@ -923,21 +917,46 @@
 			if (!settings.marathonMode && settings.autoAdvance) setTimeout(goNext, 1200);
 		});
 
-		v.addEventListener("ratechange", function () { forceSpeed(v); }, { capture: true });
-		v.addEventListener("loadedmetadata", function () {
-			forceSpeed(v);
-			if (settings.marathonMode) {
+		// Enforce speed on every media lifecycle event
+		["play", "playing", "canplay", "loadedmetadata", "loadeddata", "ratechange"].forEach(function (evt) {
+			v.addEventListener(evt, function () {
+				// Small delay on ratechange to avoid re-entrant loops
+				if (evt === "ratechange") {
+					setTimeout(function () { forceSpeed(v); }, 50);
+				} else {
+					forceSpeed(v);
+				}
+			});
+		});
+
+		if (settings.marathonMode) {
+			v.addEventListener("loadedmetadata", function () {
 				v.__userPaused = false;
 				v.play().catch(function () {});
-			}
-		});
+			});
+		}
 	}
 
 	function forceSpeed(v) {
+		if (!v || v.__cqnSettingRate) return;
 		var t = parseFloat(settings.playbackSpeed) || 2;
+		if (isNaN(t) || t <= 0) t = 2;
 		try {
-			if (Math.abs(nativeRate.get.call(v) - t) > 0.05) nativeRate.set.call(v, t);
-		} catch (x) {}
+			// Read current rate using native descriptor to bypass any other overrides
+			var cur = nativeRate && nativeRate.get ? nativeRate.get.call(v) : v.playbackRate;
+			if (Math.abs(cur - t) > 0.01) {
+				v.__cqnSettingRate = true;
+				// Set via native descriptor directly to bypass Coursera's player controls
+				if (nativeRate && nativeRate.set) {
+					nativeRate.set.call(v, t);
+				} else {
+					v.playbackRate = t;
+				}
+				v.__cqnSettingRate = false;
+			}
+		} catch (x) {
+			v.__cqnSettingRate = false;
+		}
 	}
 
 	function showCompleteBanner() {

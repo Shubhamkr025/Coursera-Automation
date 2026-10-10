@@ -9,19 +9,26 @@
 
   if (!isContextValid()) return;
 
-  // Inject main.js into page main world
-  const script = document.createElement('script');
-  script.src = chrome.runtime.getURL('main.js');
-  script.onload = () => script.remove();
-  (document.head || document.documentElement).appendChild(script);
+  // Note: main.js is registered in manifest.json content_scripts with world: "MAIN",
+  // so injecting <script src="..."> here was redundant and blocked by ad blockers (ERR_BLOCKED_BY_CLIENT).
 
   // Relay settings from chrome.storage → page script
-  try {
-    chrome.storage.sync.get(null, (data) => {
-      if (chrome.runtime.lastError) return;
-      window.dispatchEvent(new CustomEvent('CQN_SETTINGS', { detail: data }));
-    });
-  } catch (e) { /* context invalidated */ }
+  function broadcastSettings() {
+    if (!isContextValid()) return;
+    try {
+      chrome.storage.sync.get(null, (data) => {
+        if (chrome.runtime.lastError) return;
+        window.dispatchEvent(new CustomEvent('CQN_SETTINGS', { detail: data }));
+      });
+    } catch (e) { /* context invalidated */ }
+  }
+
+  broadcastSettings();
+
+  // Also respond if main.js asks for settings on initialization
+  window.addEventListener('CQN_GET_SETTINGS', () => {
+    broadcastSettings();
+  });
 
   try {
     chrome.storage.onChanged.addListener((changes) => {

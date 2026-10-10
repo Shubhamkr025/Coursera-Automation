@@ -679,8 +679,12 @@
       })();
       sendResponse({ ok: true });
     }
-    if (msg.type === 'TOGGLE_ENABLED') { /* handled silently */ }
-    return true;
+    if (msg.type === 'TOGGLE_ENABLED') {
+      sendResponse({ ok: true });
+      return false;
+    }
+    // Unhandled message type — don't hold the channel open
+    return false;
   });
 
   // Ã¢â€â‚¬Ã¢â€â‚¬ Styles Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
@@ -733,6 +737,51 @@
   }
 
   // Ã¢â€â‚¬Ã¢â€â‚¬ Run Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
+  // Video Speed Controller (ISOLATED world backup)
+  let targetPlaybackSpeed = 2;
+
+  function updateTargetSpeed() {
+    if (!isContextValid()) return;
+    try {
+      chrome.storage.sync.get({ playbackSpeed: 2 }, (s) => {
+        if (s && s.playbackSpeed) {
+          targetPlaybackSpeed = parseFloat(s.playbackSpeed) || 2;
+          applySpeedToDomVideos();
+        }
+      });
+    } catch (e) {}
+  }
+
+  function applySpeedToDomVideos() {
+    const vids = document.querySelectorAll('video');
+    vids.forEach((v) => {
+      try {
+        if (Math.abs(v.playbackRate - targetPlaybackSpeed) > 0.05) {
+          v.playbackRate = targetPlaybackSpeed;
+          v.defaultPlaybackRate = targetPlaybackSpeed;
+        }
+      } catch (e) {}
+    });
+  }
+
+  try {
+    chrome.storage.onChanged.addListener((changes) => {
+      if (!isContextValid()) return;
+      if (changes.playbackSpeed) {
+        targetPlaybackSpeed = parseFloat(changes.playbackSpeed.newValue) || 2;
+        applySpeedToDomVideos();
+      }
+    });
+  } catch (e) {}
+
+  updateTargetSpeed();
+  setInterval(applySpeedToDomVideos, 1000);
+  document.addEventListener('play', (e) => {
+    if (e.target && e.target.tagName === 'VIDEO') {
+      applySpeedToDomVideos();
+    }
+  }, true);
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => setTimeout(init, 1200));
   } else {
